@@ -1,0 +1,58 @@
+version: '3.7'
+services:
+    backend:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        environment:
+            DB_HOST: newsapp-db-1
+            DB_PORT: 3306
+            DB_DATABASE: 'laravel-react-news-app'
+            DB_USERNAME: 'root'
+            DB_PASSWORD: 'root'
+            MAIL_MAILER: 'smtp'
+            MAIL_HOST: 'mailpit'
+            MAIL_PORT: 1025
+        ports:
+            - 8000:8000
+            - 1025:1025
+        volumes:
+            - ./composer.json:/app/composer.json:cached
+            - ./composer.lock:/app/composer.lock:cached
+            # if you work on other packages, you need to add them here.
+            - ./backend:/app/backend
+        depends_on:
+            - db
+        networks:
+            - app
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+        tty: true
+        ports:
+            - 5173:5173
+        command: 
+            sh -c "npm rebuild esbuild && yarn dev"
+        volumes:
+            - ./frontend:/app/frontend
+        depends_on:
+            - backend
+        networks:
+            - app
+    db:
+        image: mysql:5.7
+        ports:
+            - 3306:3307
+        environment:
+            MYSQL_DATABASE: 'auth'
+            MYSQL_PASSWORD: 'root'
+            MYSQL_ROOT_PASSWORD: 'root'
+        volumes:
+            - .dbdata:/var/lib/mysql/
+        networks:
+            - app
+networks:
+    app:
+        driver: bridge
+    db:
